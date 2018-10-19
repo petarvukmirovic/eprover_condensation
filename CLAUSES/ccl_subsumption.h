@@ -60,7 +60,7 @@ Clause_p ClauseSetFindUnitSubsumedClause(ClauseSet_p set, Clause_p
                                          subsumer);
 
 bool     ClauseSubsumesClause(Clause_p subsumer, Clause_p sub_candidate);
-bool     ClauseSubsumesClauseModuloSetEq(Clause_p subsumer, Clause_p sub_candidate);
+bool     ClauseSubsumesClauseModuloSet(Clause_p subsumer, Clause_p sub_candidate);
 
 Clause_p ClauseSetSubsumesFVPackedClause(ClauseSet_p set,
                                          FVPackedClause_p sub_candidate);

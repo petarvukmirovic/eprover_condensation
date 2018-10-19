@@ -780,7 +780,7 @@ static bool clause_subsumes_clause(Clause_p subsumer, Clause_p  sub_candidate)
 //
 /----------------------------------------------------------------------*/
 
-bool ClauseSubsumesClauseModuloSetEq(Clause_p subsumer, Clause_p sub_candidate)
+bool ClauseSubsumesClauseModuloSet(Clause_p subsumer, Clause_p sub_candidate)
 {
    Subst_p subst;
    bool    res;

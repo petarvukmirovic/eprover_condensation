@@ -39,64 +39,7 @@ long CondensationSuccesses = 0;
 /*                         Internal Functions                          */
 /*---------------------------------------------------------------------*/
 
-/*-----------------------------------------------------------------------
-//
-// Function: do_condense_lin()
-//
-//   Implementation of condensation that uses number of subsumption calls
-//   equal to at most the number of literals in the original clause.
-//   This algorithm is a version of
-//   https://www.researchgate.net/publication/220547401_Removing_Redundancy_from_a_Clause
-//   changed to deal with equality efficiently.
-//
-// Global Variables:
-//
-// Side Effects    : -
-//
-/----------------------------------------------------------------------*/
 
-static bool do_condense_lin(Clause_p cl)
-{
-   ClauseSubsumeOrderSortLits(cl);
-
-   Clause_p orig = ClauseFlatCopy(cl);
-   Clause_p dbg_cpy = ClauseFlatCopy(orig);
-   PStack_p lits = ClauseToStack(cl);
-   bool condensed = false;
-
-   while(!PStackEmpty(lits))
-   {
-      Eqn_p lit = PStackPopP(lits);
-      EqnSetProp(lit, EPIsCondensed);
-      
-      if(ClauseSubsumesClauseModuloSetEq(orig, cl))
-      {
-         ClauseRemoveLiteral(cl, lit);
-         condensed = true;
-      }
-      else
-      {
-         EqnDelProp(lit, EPIsCondensed);
-      }
-   }
-
-   Condense(dbg_cpy);
-   if(ClauseLiteralNumber(dbg_cpy) != ClauseLiteralNumber(cl))
-   {
-      fprintf(stderr, "# orig: ");
-      EqnListPrint(stderr, orig->literals, "|", false, true);
-      fprintf(stderr, "\n# orig condense: ");
-      EqnListPrint(stderr, dbg_cpy->literals, "|", false, true);
-      fprintf(stderr, "\n# new condense: ");
-      EqnListPrint(stderr, cl->literals, "|", false, true);
-      fprintf(stderr, "\n");
-   }
-
-   PStackFree(lits);
-   ClauseFree(orig);    
-
-   return condensed;
-}
 
 /*---------------------------------------------------------------------*/
 /*                         Exported Functions                          */
@@ -133,10 +76,6 @@ bool CondenseOnce(Clause_p clause)
       {
          for(swap = false; !swap; swap = true)
          {
-            if(swap == true)
-            {
-               Error("SWAP = TRUE", SYNTAX_ERROR);
-            }
             if(LiteralUnifyOneWay(l1, l2, subst, swap))
             {
                newlits = EqnListCopyExcept(clause->literals, l2, l1->bank);
@@ -196,7 +135,7 @@ bool CondenseOnceSet(Clause_p clause)
                cand = ClauseAlloc(newlits);
                cand->weight = ClauseStandardWeight(cand);
                ClauseSubsumeOrderSortLits(cand);
-               if(ClauseSubsumesClauseModuloSetEq(cand, clause))
+               if(ClauseSubsumesClauseModuloSet(cand, clause))
                {
                   EqnListFree(clause->literals);
                   clause->literals = cand->literals;
@@ -241,6 +180,11 @@ bool CondenseSet(Clause_p clause)
 
    CondensationAttempts++;
 
+#ifndef NDEBUG
+   Clause_p orig = ClauseFlatCopy(clause);
+   Clause_p dbg_cpy = ClauseFlatCopy(clause);
+#endif
+
    if((clause->pos_lit_no > 1) || (clause->neg_lit_no >1))
    {
       clause->weight = ClauseStandardWeight(clause);
@@ -261,6 +205,23 @@ bool CondenseSet(Clause_p clause)
          ClausePushDerivation(clause, DCCondense, NULL, NULL);
       }
    }
+
+#ifndef NDEBUG
+   Condense(dbg_cpy);
+   /*if(ClauseLiteralNumber(dbg_cpy) != ClauseLiteralNumber(clause))
+   {
+      fprintf(stderr, "#orig (%d / %d): ", ClauseLiteralNumber(dbg_cpy), ClauseLiteralNumber(clause));
+      EqnListPrint(stderr, orig->literals, "|", false, true);
+      fprintf(stderr, "\n#old condense: ");
+      EqnListPrint(stderr, dbg_cpy->literals, "|", false, true);
+      fprintf(stderr, "\n#new condense: ");
+      EqnListPrint(stderr, clause->literals, "|", false, true);
+      fprintf(stderr, "\n");
+   }*/
+   assert(ClauseLiteralNumber(dbg_cpy) >= ClauseLiteralNumber(clause));
+   ClauseFree(orig);
+   ClauseFree(dbg_cpy);
+#endif
    
    return res;
 }
