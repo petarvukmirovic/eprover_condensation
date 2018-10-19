@@ -189,13 +189,14 @@ bool CondenseOnceSet(Clause_p clause)
             if((l2 != l1 && LiteralUnifyOneWay(l1, l2, subst, swap == 1 ? true : false)) ||
                (l2 == l1 && EqnUnifySides(l1, subst)))
             {
+               newlits = EqnListCopyExcept(clause->literals, l2, l1->bank);
                SubstBacktrack(subst);
                EqnListRemoveDuplicates(newlits);
                EqnListRemoveResolved(&newlits);
                cand = ClauseAlloc(newlits);
                cand->weight = ClauseStandardWeight(cand);
                ClauseSubsumeOrderSortLits(cand);
-               if(ClauseSubsumesClause(cand, clause))
+               if(ClauseSubsumesClauseModuloSetEq(cand, clause))
                {
                   EqnListFree(clause->literals);
                   clause->literals = cand->literals;
