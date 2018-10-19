@@ -189,7 +189,6 @@ bool CondenseOnceSet(Clause_p clause)
             if((l2 != l1 && LiteralUnifyOneWay(l1, l2, subst, swap == 1 ? true : false)) ||
                (l2 == l1 && EqnUnifySides(l1, subst)))
             {
-               newlits = EqnListCopyExcept(clause->literals, l2, l1->bank);
                SubstBacktrack(subst);
                EqnListRemoveDuplicates(newlits);
                EqnListRemoveResolved(&newlits);
@@ -243,7 +242,17 @@ bool CondenseSet(Clause_p clause)
 
    if((clause->pos_lit_no > 1) || (clause->neg_lit_no >1))
    {
-      res = CondenseOnceSet(clause);
+      clause->weight = ClauseStandardWeight(clause);
+      ClauseSubsumeOrderSortLits(clause);
+
+      while(CondenseOnceSet(clause))
+      {
+         /*fprintf(stderr, "\n# condensed once : ");
+         EqnListPrint(stderr, clause->literals, "|", false, true);*/
+
+         res = true;
+      }
+
       if(res)
       {
          CondensationSuccesses++;
